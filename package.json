@@ -1,0 +1,25 @@
+{
+  "name": "kartochka-pro",
+  "version": "1.0.0",
+  "description": "ИИ-генератор SEO-карточек для Wildberries и Ozon",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/z8b5n7n7c7-bot/cr7.git"
+  },
+  "bugs": {
+    "url": "https://github.com/z8b5n7n7c7-bot/cr7/issues"
+  },
+  "homepage": "https://github.com/z8b5n7n7c7-bot/cr7#readme",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.135.0"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  }
+}

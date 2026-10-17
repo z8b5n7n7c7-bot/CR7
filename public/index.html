@@ -17,7 +17,7 @@
   .hero h1 { font-size:clamp(30px,5vw,52px); line-height:1.1; margin:0 0 16px; letter-spacing:-.02em; }
   .hero h1 span { background:linear-gradient(90deg,var(--acc),var(--acc2)); -webkit-background-clip:text; color:transparent; }
   .hero p { color:var(--mute); font-size:18px; max-width:620px; margin:0 auto 28px; }
-  .btn { display:inline-block; border:0; cursor:pointer; padding:14px 26px; border-radius:12px; font-size:16px; font-weight:700; color:#fff; background:linear-gradient(90deg,var(--acc),var(--acc2)); text-decoration:none; }
+  .btn { display:inline-block; font-family:inherit; border:0; cursor:pointer; padding:14px 26px; border-radius:12px; font-size:16px; font-weight:700; color:#fff; background:linear-gradient(90deg,var(--acc),var(--acc2)); text-decoration:none; }
   .btn:disabled { opacity:.6; cursor:wait; }
   .btn.ghost { background:transparent; border:1px solid var(--line); }
   .stats { display:flex; gap:32px; justify-content:center; flex-wrap:wrap; margin-top:36px; color:var(--mute); font-size:14px; }
@@ -82,12 +82,12 @@
         <label>Тон текста</label>
         <select name="tone"><option>дружелюбный и уверенный</option><option>премиальный и сдержанный</option><option>энергичный и молодёжный</option><option>экспертный и технический</option></select>
         <label>PRO-код (если есть)</label>
-        <input name="proCode" placeholder="—">
+        <input name="proCode" placeholder="PRO-XXXXXXXXXX" autocomplete="off">
         <div style="margin-top:18px"><button class="btn" style="width:100%" id="go">✨ Сгенерировать</button></div>
         <div class="note" id="left"></div>
       </form>
 
-      <div class="panel out" id="out"><div class="empty">Заполните форму, и здесь появится готовая карточка 👈</div></div>
+      <div class="panel out" id="out"><div class="empty">Заполните форму, и здесь появится готовая карточка ✨</div></div>
     </div>
   </section>
 
@@ -103,30 +103,90 @@
   <section id="price">
     <h2>Тарифы</h2>
     <div class="grid3">
-      <div class="panel price"><h4>Старт</h4><div class="sum">0 ₽</div><ul><li>3 карточки в день</li><li>WB и Ozon</li><li>Все блоки карточки</li></ul><a class="btn ghost" href="#app">Попробовать</a></div>
-      <div class="panel price hot"><h4>PRO</h4><div class="sum">490 ₽<small>/мес</small></div><ul><li>Безлимит карточек</li><li>Все тона и стили</li><li>Приоритетная скорость</li></ul><a class="btn pay" href="#">Подключить PRO</a></div>
-      <div class="panel price"><h4>Агентство</h4><div class="sum">1 990 ₽<small>/мес</small></div><ul><li>Всё из PRO</li><li>5 сотрудников</li><li>Массовая загрузка (скоро)</li></ul><a class="btn ghost pay" href="#">Подключить</a></div>
+      <div class="panel price"><h4>Старт</h4><div class="sum">0 ₽</div><ul><li>3 карточки в день</li><li>WB и Ozon</li><li>Сайт и Telegram-бот</li></ul><a class="btn ghost" href="#app">Попробовать</a></div>
+      <div class="panel price hot"><h4>PRO на месяц</h4><div class="sum">490 ₽<small>/30 дней</small></div><ul><li>Безлимит карточек</li><li>Сайт и Telegram-бот</li><li>Дешевле одного текста у копирайтера</li></ul><button class="btn pay" data-plan="month">Подключить PRO</button></div>
+      <div class="panel price"><h4>PRO на год</h4><div class="sum">3 990 ₽<small>/365 дней</small></div><ul><li>Всё из PRO</li><li>Выгода 32%</li><li>333 ₽ в месяц</li></ul><button class="btn ghost pay" data-plan="year">Подключить на год</button></div>
     </div>
+    <p class="note" id="pro-status"></p>
   </section>
 
-  <footer>© КарточкаPRO</footer>
+  <footer>© КарточкаPRO<span id="bot-link"></span></footer>
 </div>
 
-<div class="modal" id="modal"><div class="panel">
-  <h3 style="margin-top:0">Бесплатный лимит на сегодня закончился 🙌</h3>
-  <p style="color:var(--mute)">Подключите PRO за 490 ₽/мес и создавайте карточки без ограничений. Это дешевле одного текста у копирайтера.</p>
-  <a class="btn pay" href="#">Подключить PRO</a>
-  <p><a href="#" style="color:var(--mute)" onclick="modal.classList.remove('on');return false">Вернусь завтра</a></p>
-</div></div>
+<div class="modal" id="modal"><div class="panel" id="modal-body"></div></div>
 
 <script>
 const $ = (s) => document.querySelector(s);
 let marketplace = 'wb';
+let cfg = { freePerDay: 3, payments: false };
 const modal = $('#modal');
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const storage = {
+  get(k) { try { return localStorage.getItem(k) || ''; } catch { return ''; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+};
+const api = async (url, opts) => {
+  const r = await fetch(url, opts);
+  let d = {};
+  try { d = await r.json(); } catch {}
+  return { r, d };
+};
 
-fetch('/api/config').then(r => r.json()).then(c => {
-  document.querySelectorAll('.pay').forEach(a => a.href = c.paymentUrl);
-  $('#left').textContent = `Бесплатно: ${c.freePerDay} карточки в день` + (c.demo ? ' · демо-режим' : '');
+function showModal(html) {
+  $('#modal-body').innerHTML = html + `<p><a href="#" style="color:var(--mute)" data-close>Закрыть</a></p>`;
+  modal.classList.add('on');
+}
+modal.addEventListener('click', e => {
+  if (e.target === modal || e.target.hasAttribute('data-close')) { e.preventDefault(); modal.classList.remove('on'); }
+});
+
+function setPro(code, expires) {
+  storage.set('proCode', code);
+  $('[name=proCode]').value = code;
+  $('#pro-status').textContent = `✅ PRO активен до ${new Date(expires).toLocaleDateString('ru-RU')}`;
+  $('#left').textContent = 'PRO: без ограничений';
+}
+
+async function init() {
+  try { cfg = (await api('/api/config')).d; } catch {}
+  $('#left').textContent = `Бесплатно: ${cfg.freePerDay} карточки в день` + (cfg.demo ? ' · демо-режим' : '');
+  if (cfg.botUsername) $('#bot-link').innerHTML = ` · <a style="color:var(--mute)" href="https://t.me/${encodeURIComponent(cfg.botUsername)}">Telegram-бот</a>`;
+  const saved = storage.get('proCode');
+  if (saved) {
+    const { d } = await api('/api/pro?code=' + encodeURIComponent(saved));
+    if (d.valid) setPro(saved, d.expires);
+  }
+  const order = new URLSearchParams(location.search).get('order');
+  if (order) checkOrder(order);
+}
+
+// Возврат со страницы оплаты: ждём подтверждения от ЮKassa и показываем PRO-код.
+async function checkOrder(order, attempt = 0) {
+  const { r, d } = await api('/api/pay/status?order=' + encodeURIComponent(order));
+  if (r.ok && d.status === 'paid') {
+    history.replaceState(null, '', location.pathname);
+    const { d: info } = await api('/api/pro?code=' + encodeURIComponent(d.code));
+    setPro(d.code, info.expires);
+    const bot = cfg.botUsername ? `<p style="color:var(--mute)">В Telegram-боте отправьте: <code>/pro ${esc(d.code)}</code></p>` : '';
+    return showModal(`<h3 style="margin-top:0">Оплата прошла 🎉</h3><p>Ваш PRO-код:</p><p style="font-size:22px;font-weight:800">${esc(d.code)}</p><p style="color:var(--mute)">Он уже сохранён в этом браузере. Запишите его, чтобы войти с другого устройства.</p>${bot}`);
+  }
+  if (r.ok && d.status === 'pending' && attempt < 20) return setTimeout(() => checkOrder(order, attempt + 1), 3000);
+  history.replaceState(null, '', location.pathname);
+  showModal(d.status === 'canceled'
+    ? `<h3 style="margin-top:0">Оплата отменена</h3><p style="color:var(--mute)">Деньги не списаны. Можно попробовать ещё раз.</p>`
+    : `<h3 style="margin-top:0">Ждём подтверждения оплаты</h3><p style="color:var(--mute)">Если деньги списались, обновите страницу через пару минут. Номер заказа: ${esc(order)}</p>`);
+}
+
+document.addEventListener('click', async e => {
+  const btn = e.target.closest('.pay');
+  if (!btn) return;
+  e.preventDefault();
+  if (!cfg.payments) return showModal(`<h3 style="margin-top:0">Оплата скоро появится</h3><p style="color:var(--mute)">Мы подключаем приём платежей. Загляните чуть позже!</p>`);
+  btn.disabled = true;
+  const { r, d } = await api('/api/pay', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ plan: btn.dataset.plan || 'month' }) });
+  btn.disabled = false;
+  if (r.ok && d.url) location.href = d.url;
+  else showModal(`<h3 style="margin-top:0">Не удалось создать платёж</h3><p style="color:var(--mute)">${esc(d.error || 'Попробуйте ещё раз')}</p>`);
 });
 
 $('#mp').addEventListener('click', e => {
@@ -135,14 +195,19 @@ $('#mp').addEventListener('click', e => {
   document.querySelectorAll('#mp button').forEach(b => b.classList.toggle('on', b === e.target));
 });
 
-const esc = (s) => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const copyBtn = (id) => `<button class="copy" type="button" onclick="navigator.clipboard.writeText(document.getElementById('${id}').innerText);this.textContent='Скопировано'">Копировать</button>`;
+const copyBtn = (id) => `<button class="copy" type="button" data-copy="${id}">Копировать</button>`;
+$('#out').addEventListener('click', async e => {
+  const id = e.target.dataset?.copy;
+  if (!id) return;
+  try { await navigator.clipboard.writeText($('#' + id).innerText); e.target.textContent = 'Скопировано'; }
+  catch { e.target.textContent = 'Выделите текст вручную'; }
+});
 
 function render(d) {
   $('#out').innerHTML = `
     <h3>Название <span>${d.title.length} симв. ${copyBtn('o-title')}</span></h3><div class="box" id="o-title">${esc(d.title)}</div>
     <h3>Описание <span>${d.description.length} симв. ${copyBtn('o-desc')}</span></h3><div class="box" id="o-desc">${esc(d.description)}</div>
-    <h3>Ключевые слова ${copyBtn('o-kw')}</h3><div class="tags" id="o-kw">${d.keywords.map(k => `<span>${esc(k)}</span>`).join(' ')}</div>
+    <h3>Ключевые слова ${copyBtn('o-kw')}</h3><div class="tags" id="o-kw">${d.keywords.map(k => `<span>${esc(k)}</span>`).join(', ')}</div>
     <h3>Преимущества ${copyBtn('o-bul')}</h3><div class="box" id="o-bul">${d.bullets.map(b => '• ' + esc(b)).join('\n')}</div>
     <h3>Тексты для инфографики</h3><div class="slides">${d.slides.map(s => `<div class="slide"><b>${esc(s.head)}</b><small>${esc(s.sub)}</small></div>`).join('')}</div>`;
 }
@@ -153,16 +218,19 @@ $('#form').addEventListener('submit', async e => {
   body.marketplace = marketplace;
   const btn = $('#go'); btn.disabled = true; btn.textContent = '⏳ ИИ пишет карточку...';
   try {
-    const r = await fetch('/api/generate', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
-    const d = await r.json();
-    if (r.status === 402) { modal.classList.add('on'); return; }
-    if (!r.ok) throw new Error(d.error);
+    const { r, d } = await api('/api/generate', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
+    if (r.status === 402) {
+      return showModal(`<h3 style="margin-top:0">Бесплатный лимит на сегодня закончился 🙌</h3><p style="color:var(--mute)">PRO за 490 ₽ в месяц: карточки без ограничений. Это дешевле одного текста у копирайтера.</p><button class="btn pay" data-plan="month">Подключить PRO</button>`);
+    }
+    if (!r.ok) throw new Error(d.error || 'Сервер недоступен, попробуйте ещё раз');
     render(d);
-    if (d.left !== null) $('#left').textContent = `Осталось бесплатно сегодня: ${d.left}`;
+    if (d.left != null) $('#left').textContent = `Осталось бесплатно сегодня: ${d.left}`;
   } catch (err) {
     $('#out').innerHTML = `<div class="empty err">${esc(err.message || 'Ошибка')}</div>`;
   } finally { btn.disabled = false; btn.textContent = '✨ Сгенерировать'; }
 });
+
+init();
 </script>
 </body>
 </html>
