@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>КарточкаPRO — карточки товаров для WB и Ozon за 10 секунд</title>
+<meta name="description" content="ИИ пишет продающие SEO-карточки для Wildberries и Ozon: название, описание, ключевые слова, тексты инфографики.">
+<style>
+  :root { --bg:#0e0b1a; --card:#1a1530; --line:#2d2650; --text:#f2effa; --mute:#a59fbf; --acc:#b14bff; --acc2:#ff3d8b; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); line-height:1.5; }
+  .wrap { max-width:1080px; margin:0 auto; padding:0 16px; }
+  header { display:flex; justify-content:space-between; align-items:center; padding:20px 0; }
+  .logo { font-weight:800; font-size:20px; } .logo b { background:linear-gradient(90deg,var(--acc),var(--acc2)); -webkit-background-clip:text; color:transparent; }
+  nav a { color:var(--mute); text-decoration:none; margin-left:20px; font-size:14px; }
+  .hero { text-align:center; padding:56px 0 40px; }
+  .hero h1 { font-size:clamp(30px,5vw,52px); line-height:1.1; margin:0 0 16px; letter-spacing:-.02em; }
+  .hero h1 span { background:linear-gradient(90deg,var(--acc),var(--acc2)); -webkit-background-clip:text; color:transparent; }
+  .hero p { color:var(--mute); font-size:18px; max-width:620px; margin:0 auto 28px; }
+  .btn { display:inline-block; border:0; cursor:pointer; padding:14px 26px; border-radius:12px; font-size:16px; font-weight:700; color:#fff; background:linear-gradient(90deg,var(--acc),var(--acc2)); text-decoration:none; }
+  .btn:disabled { opacity:.6; cursor:wait; }
+  .btn.ghost { background:transparent; border:1px solid var(--line); }
+  .stats { display:flex; gap:32px; justify-content:center; flex-wrap:wrap; margin-top:36px; color:var(--mute); font-size:14px; }
+  .stats b { display:block; color:var(--text); font-size:26px; }
+  section { padding:48px 0; } h2 { font-size:30px; margin:0 0 24px; text-align:center; }
+  .app { display:grid; grid-template-columns:1fr 1.3fr; gap:20px; }
+  @media (max-width:820px){ .app { grid-template-columns:1fr; } nav { display:none; } }
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:20px; }
+  label { display:block; font-size:13px; color:var(--mute); margin:12px 0 6px; }
+  input, textarea, select { width:100%; background:#120e24; border:1px solid var(--line); color:var(--text); border-radius:10px; padding:11px 12px; font:inherit; }
+  textarea { min-height:90px; resize:vertical; }
+  .seg { display:flex; gap:8px; } .seg button { flex:1; padding:10px; border-radius:10px; border:1px solid var(--line); background:#120e24; color:var(--mute); cursor:pointer; font-weight:700; }
+  .seg button.on { border-color:var(--acc); color:var(--text); background:#2a1b4a; }
+  .out h3 { font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--mute); margin:18px 0 8px; display:flex; justify-content:space-between; }
+  .out h3:first-child { margin-top:0; }
+  .copy { background:none; border:1px solid var(--line); color:var(--mute); border-radius:8px; font-size:12px; padding:2px 10px; cursor:pointer; text-transform:none; letter-spacing:0; }
+  .box { background:#120e24; border-radius:10px; padding:12px; white-space:pre-wrap; font-size:15px; }
+  .tags { display:flex; flex-wrap:wrap; gap:6px; } .tags span { background:#2a1b4a; border-radius:20px; padding:4px 10px; font-size:13px; }
+  .slides { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
+  .slide { aspect-ratio:3/4; border-radius:10px; padding:12px; background:linear-gradient(160deg,#3a1d6e,#7a1f5c); display:flex; flex-direction:column; justify-content:flex-end; }
+  .slide b { font-size:17px; line-height:1.15; } .slide small { color:#e5d9ff; font-size:12px; margin-top:4px; }
+  .empty { color:var(--mute); text-align:center; padding:60px 10px; }
+  .note { font-size:13px; color:var(--mute); margin-top:10px; text-align:center; }
+  .err { color:#ff7a9c; }
+  .grid3 { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; }
+  .feat h4 { margin:8px 0 6px; font-size:18px; } .feat p { color:var(--mute); margin:0; font-size:15px; } .feat i { font-style:normal; font-size:28px; }
+  .price { text-align:center; } .price .sum { font-size:40px; font-weight:800; margin:8px 0; } .price .sum small { font-size:16px; color:var(--mute); font-weight:400; }
+  .price ul { list-style:none; padding:0; margin:16px 0 20px; color:var(--mute); text-align:left; } .price li { padding:5px 0; } .price li::before { content:"✓ "; color:var(--acc); }
+  .price.hot { border-color:var(--acc); box-shadow:0 0 40px #b14bff33; }
+  .modal { position:fixed; inset:0; background:#000a; display:none; align-items:center; justify-content:center; padding:16px; z-index:10; }
+  .modal.on { display:flex; } .modal .panel { max-width:420px; text-align:center; }
+  footer { text-align:center; color:var(--mute); font-size:13px; padding:40px 0; border-top:1px solid var(--line); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">Карточка<b>PRO</b></div>
+    <nav><a href="#app">Генератор</a><a href="#why">Возможности</a><a href="#price">Тарифы</a></nav>
+  </header>
+
+  <div class="hero">
+    <h1>Карточка товара для <span>Wildberries и Ozon</span> за 10 секунд</h1>
+    <p>ИИ пишет SEO-название, продающее описание, ключевые слова и тексты для инфографики. Без копирайтера за 500 ₽ и ожидания в 2 дня.</p>
+    <a class="btn" href="#app">Создать карточку бесплатно</a>
+    <div class="stats"><div><b>10 сек</b>вместо 2 дней</div><div><b>от 0 ₽</b>вместо 500 ₽ за карточку</div><div><b>20+</b>ключевых запросов в тексте</div></div>
+  </div>
+
+  <section id="app">
+    <div class="app">
+      <form class="panel" id="form">
+        <label>Маркетплейс</label>
+        <div class="seg" id="mp"><button type="button" class="on" data-v="wb">Wildberries</button><button type="button" data-v="ozon">Ozon</button></div>
+        <label>Название товара *</label>
+        <input name="name" required placeholder="Термокружка с крышкой">
+        <label>Категория</label>
+        <input name="category" placeholder="Посуда для напитков">
+        <label>Особенности и характеристики</label>
+        <textarea name="features" placeholder="500 мл, держит тепло 12 часов, нержавеющая сталь, не протекает"></textarea>
+        <label>Для кого</label>
+        <input name="audience" placeholder="автомобилистов, офисных работников">
+        <label>Тон текста</label>
+        <select name="tone"><option>дружелюбный и уверенный</option><option>премиальный и сдержанный</option><option>энергичный и молодёжный</option><option>экспертный и технический</option></select>
+        <label>PRO-код (если есть)</label>
+        <input name="proCode" placeholder="—">
+        <div style="margin-top:18px"><button class="btn" style="width:100%" id="go">✨ Сгенерировать</button></div>
+        <div class="note" id="left"></div>
+      </form>
+
+      <div class="panel out" id="out"><div class="empty">Заполните форму, и здесь появится готовая карточка 👈</div></div>
+    </div>
+  </section>
+
+  <section id="why">
+    <h2>Почему продавцы выбирают нас</h2>
+    <div class="grid3">
+      <div class="panel feat"><i>🔎</i><h4>SEO под алгоритмы</h4><p>Главный запрос в начале названия, 20+ ключей в тексте. Карточку находят в поиске маркетплейса.</p></div>
+      <div class="panel feat"><i>🛡️</i><h4>Без блокировок</h4><p>Учитываем правила WB и Ozon: лимиты символов, запрещённые слова, никаких контактов.</p></div>
+      <div class="panel feat"><i>🎨</i><h4>Готово для дизайнера</h4><p>Тексты для 5 слайдов инфографики. Осталось вставить их в шаблон.</p></div>
+    </div>
+  </section>
+
+  <section id="price">
+    <h2>Тарифы</h2>
+    <div class="grid3">
+      <div class="panel price"><h4>Старт</h4><div class="sum">0 ₽</div><ul><li>3 карточки в день</li><li>WB и Ozon</li><li>Все блоки карточки</li></ul><a class="btn ghost" href="#app">Попробовать</a></div>
+      <div class="panel price hot"><h4>PRO</h4><div class="sum">490 ₽<small>/мес</small></div><ul><li>Безлимит карточек</li><li>Все тона и стили</li><li>Приоритетная скорость</li></ul><a class="btn pay" href="#">Подключить PRO</a></div>
+      <div class="panel price"><h4>Агентство</h4><div class="sum">1 990 ₽<small>/мес</small></div><ul><li>Всё из PRO</li><li>5 сотрудников</li><li>Массовая загрузка (скоро)</li></ul><a class="btn ghost pay" href="#">Подключить</a></div>
+    </div>
+  </section>
+
+  <footer>© КарточкаPRO</footer>
+</div>
+
+<div class="modal" id="modal"><div class="panel">
+  <h3 style="margin-top:0">Бесплатный лимит на сегодня закончился 🙌</h3>
+  <p style="color:var(--mute)">Подключите PRO за 490 ₽/мес и создавайте карточки без ограничений. Это дешевле одного текста у копирайтера.</p>
+  <a class="btn pay" href="#">Подключить PRO</a>
+  <p><a href="#" style="color:var(--mute)" onclick="modal.classList.remove('on');return false">Вернусь завтра</a></p>
+</div></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+let marketplace = 'wb';
+const modal = $('#modal');
+
+fetch('/api/config').then(r => r.json()).then(c => {
+  document.querySelectorAll('.pay').forEach(a => a.href = c.paymentUrl);
+  $('#left').textContent = `Бесплатно: ${c.freePerDay} карточки в день` + (c.demo ? ' · демо-режим' : '');
+});
+
+$('#mp').addEventListener('click', e => {
+  if (!e.target.dataset.v) return;
+  marketplace = e.target.dataset.v;
+  document.querySelectorAll('#mp button').forEach(b => b.classList.toggle('on', b === e.target));
+});
+
+const esc = (s) => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const copyBtn = (id) => `<button class="copy" type="button" onclick="navigator.clipboard.writeText(document.getElementById('${id}').innerText);this.textContent='Скопировано'">Копировать</button>`;
+
+function render(d) {
+  $('#out').innerHTML = `
+    <h3>Название <span>${d.title.length} симв. ${copyBtn('o-title')}</span></h3><div class="box" id="o-title">${esc(d.title)}</div>
+    <h3>Описание <span>${d.description.length} симв. ${copyBtn('o-desc')}</span></h3><div class="box" id="o-desc">${esc(d.description)}</div>
+    <h3>Ключевые слова ${copyBtn('o-kw')}</h3><div class="tags" id="o-kw">${d.keywords.map(k => `<span>${esc(k)}</span>`).join(' ')}</div>
+    <h3>Преимущества ${copyBtn('o-bul')}</h3><div class="box" id="o-bul">${d.bullets.map(b => '• ' + esc(b)).join('\n')}</div>
+    <h3>Тексты для инфографики</h3><div class="slides">${d.slides.map(s => `<div class="slide"><b>${esc(s.head)}</b><small>${esc(s.sub)}</small></div>`).join('')}</div>`;
+}
+
+$('#form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const body = Object.fromEntries(new FormData(e.target));
+  body.marketplace = marketplace;
+  const btn = $('#go'); btn.disabled = true; btn.textContent = '⏳ ИИ пишет карточку...';
+  try {
+    const r = await fetch('/api/generate', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
+    const d = await r.json();
+    if (r.status === 402) { modal.classList.add('on'); return; }
+    if (!r.ok) throw new Error(d.error);
+    render(d);
+    if (d.left !== null) $('#left').textContent = `Осталось бесплатно сегодня: ${d.left}`;
+  } catch (err) {
+    $('#out').innerHTML = `<div class="empty err">${esc(err.message || 'Ошибка')}</div>`;
+  } finally { btn.disabled = false; btn.textContent = '✨ Сгенерировать'; }
+});
+</script>
+</body>
+</html>
